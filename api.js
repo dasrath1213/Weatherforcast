@@ -1,54 +1,56 @@
-const express =require("express");
-const https=require("https");
-const bodyparser=require("body-parser");
-const app=express();
+const express = require("express");
+const https = require("https");
+const bodyParser = require("body-parser");
+const app = express();
 
-app.use(bodyparser.urlencoded({extended:true}));
-app.get("/",function(req,res){
+app.use(express.static("public"));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-res.sendFile(__dirname+"/index.html");
-
-});
-app.post("/",function(req,res){
-
-var cn=(req.body.cityname);
-const url="https://api.openweathermap.org/data/2.5/weather?q="+cn+"&appid=56b4a4919e0c80a6652c5f2c8140e97b&units=standard#";
-https.get(url,function(response){
-// console.log(response);
-
-response.on("data",function(data){
-const weatherdata=JSON.parse(data);
-res.writeHead(200 , {'Content-Type' : 'text/html'})
-const iconurl= "http://openweathermap.org/img/wn/"+weatherdata.weather[0].icon+"@2x.png";
-
-res.write("The weather is currently"+weatherdata.weather[0].description+".");
-res.write("<h1>The Tempreature in "+cn+" is "+weatherdata.main.temp+" degree celcius.</h1>");
-res.write("<img src="+iconurl+">");
-// res.write('<h1>Hello Express!</h1>');
-res.send();
+app.get("/", function (req, res) {
+  // Serve the index.html file
+  res.sendFile(__dirname + "/index.html");
 });
 
-});
-});
-// const url="https://api.openweathermap.org/data/2.5/weather?q=Madhubani&appid=56b4a4919e0c80a6652c5f2c8140e97b&units=standard#";
-// https.get(url,function(response){
-// // console.log(response);
-//
-// response.on("data",function(data){
-// const weatherdata=JSON.parse(data);
-// res.writeHead(200 , {'Content-Type' : 'text/html'})
-// const iconurl= "http://openweathermap.org/img/wn/"+weatherdata.weather[0].icon+"@2x.png";
-//
-// res.write("The weather is currently"+weatherdata.weather[0].description+".");
-// res.write("<h1>The Tempreature in Madhubani is "+weatherdata.main.temp+"degree celcius.</h1>");
-// res.write("<img src="+iconurl+">");
-// // res.write('<h1>Hello Express!</h1>');
-// res.send();
-// });
-//
-// });
+app.post("/", function (req, res) {
+  var cn = req.body.cityname;
+  const url =
+    "https://api.openweathermap.org/data/2.5/weather?q=" +
+    cn +
+    "&appid=56b4a4919e0c80a6652c5f2c8140e97b&units=metric";
 
-app.listen(3000,function(){
+  https.get(url, function (response) {
+    response.on("data", function (data) {
+      const weatherData = JSON.parse(data);
 
-console.log("Server start listening at port 3000");
+      // Check if weather data is available
+      if (weatherData.weather && weatherData.weather.length > 0) {
+        const iconUrl =
+          "http://openweathermap.org/img/wn/" +
+          weatherData.weather[0].icon +
+          "@2x.png";
+
+        // Display weather information
+        res.write("<h1>The weather in " + cn + " is currently " + weatherData.weather[0].description + ".</h1>");
+        res.write("<h2>The temperature is " + weatherData.main.temp + " degree Celsius.</h2>");
+        res.write("<img src=" + iconUrl + ">");
+
+        // Add button to check another city
+        res.write("<form action='/' method='get'>");
+        res.write("<button type='submit'>Check another city</button>");
+        res.write("</form>");
+        res.send();
+      } else {
+        // Display error message if no weather data is available
+        res.write("<h1>No weather data available for " + cn + ".</h1>");
+        res.write("<form action='/' method='get'>");
+        res.write("<button type='submit'>Check another city</button>");
+        res.write("</form>");
+        res.send();
+      }
+    });
+  });
+});
+
+app.listen(3000, function () {
+  console.log("Server started listening on port 3000");
 });
